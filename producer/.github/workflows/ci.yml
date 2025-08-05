@@ -1,0 +1,280 @@
+name: CI - Build, Scan, Push and Trigger CD
+
+# Déclencheurs du workflow
+on:
+  push:
+    branches: [main, dev]              # Sur push vers main ou dev
+  pull_request:
+    branches: [dev, 'rc-*']             # Sur PR vers dev ou branches rc-*
+
+permissions:
+  id-token: write   # Indispensable pour OIDC (connexion AWS sans clés statiques)
+  contents: read    # Lecture du code source
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    # Variables d'environnement locales à ce job
+    env:
+      AWS_REGION: ${{ secrets.AWS_REGION }}                # Région AWS (ex: ca-central-1)
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}        # ID du compte AWS (12 chiffres)
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}              # Token SonarCloud
+      ECR_REPO: ${{ secrets.ECR_REPO }}                    # URI complet du dépôt ECR
+      PERSONAL_ACCESS_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }} # Token GitHub perso (repo + workflow)
+      REPO_DEPLOY: ${{ secrets.REPO_DEPLOY }} # depot git de deploiement
+      ENV: ${{ github.ref_name == 'main' && 'prod' || github.ref_name == 'dev' && 'dev' || 'feature' }} # Environnement
+
+    steps:
+      # 1. Récupération du code source
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2. Connexion à AWS via OIDC (pas besoin d'AWS_ACCESS_KEY/SECRET)
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/GitHubActionsECRRole
+          aws-region: ${{ env.AWS_REGION }}
+
+      # 3. Installation de Java 17 (distribution Temurin)
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      # 4. Définition du tag d'image Docker en fonction de la branche ou PR
+      - name: Set environment tag
+        id: tag
+        run: |
+          SHA=$(echo ${{ github.sha }} | cut -c1-8) # 8 premiers caractères du commit
+          BRANCH="${{ github.ref }}"
+          
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            BASE="${{ github.base_ref }}"
+            if [[ "$BASE" == "dev" ]]; then
+              TAG="feature-${SHA}"
+            elif [[ "$BASE" == rc-* ]]; then
+              TAG="staging-${SHA}"
+            else
+              TAG="pr-${SHA}"
+            fi
+          elif [[ "$BRANCH" == "refs/heads/main" ]]; then
+            TAG="prod-${SHA}"
+          elif [[ "$BRANCH" == "refs/heads/dev" ]]; then
+            TAG="dev-${SHA}"
+          else
+            TAG="unknown-${SHA}"
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      # 5. Analyse de qualité du code avec SonarCloud
+      - name: SonarQube Analysis
+        uses: SonarSource/sonarcloud-github-action@master
+        with:
+          projectBaseDir: .
+        env:
+          SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
+
+      # 6. Compilation + Tests Maven
+      - name: Build and Test
+        run: mvn clean install -DskipTests=false
+
+      # 7. Connexion à Amazon ECR pour push Docker
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
+
+      # 8. Construction de l'image Docker
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ env.ECR_REPO }}:${{ steps.tag.outputs.tag }} .
+
+      # 9. Scan sécurité de l'image avec Trivy
+      - name: Scan Docker image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.ECR_REPO }}:${{ steps.tag.outputs.tag }}
+          format: 'table'
+          exit-code: '1' # Échoue si vulnérabilités CRITICAL ou HIGH
+          severity: 'CRITICAL,HIGH'
+
+      # 10. Push de l'image dans ECR
+      - name: Push Docker image
+        run: |
+          docker push ${{ env.ECR_REPO }}:${{ steps.tag.outputs.tag }}
+
+      # 11. Déclenchement du workflow CD dans un autre dépôt
+      - name: Trigger CD
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          token: ${{ env.PERSONAL_ACCESS_TOKEN }}
+          repository: ${{ env.REPO_DEPLOY }}  # Nom du dépôt CD
+          event-type: deploy
+          client-payload: >-
+            {
+              "branch": "${{ github.ref_name }}",
+              "image_tag": "${{ steps.tag.outputs.tag }}",
+              "environment": "${{ env.ENV }}",
+              "microservice": "microservice-a"
+            }
+
+
+
+
+
+#  ---------------
+#
+#name: CI - Build, Scan, Push and Trigger CD
+#
+#on:
+#  push:
+#    branches: [main, dev]
+#  pull_request:
+#    branches: [dev, 'rc-*']
+#
+#env:
+#  ECR_REPO: ${{ secrets.ECR_REPO }}
+#  GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+#
+#jobs:
+#  build:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v4
+#
+#      - name: Set up JDK 17
+#        uses: actions/setup-java@v4
+#        with:
+#          java-version: '17'
+#          distribution: 'temurin'
+#
+#      - name: Set environment tag
+#        id: tag
+#        run: |
+#          SHA=$(echo ${{ github.sha }} | cut -c1-8)
+#          BRANCH="${{ github.ref }}"
+#
+#          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+#            BASE="${{ github.base_ref }}"
+#            if [[ "$BASE" == "dev" ]]; then
+#              TAG="feature-${SHA}"
+#            elif [[ "$BASE" == rc-* ]]; then
+#              TAG="staging-${SHA}"
+#            else
+#              TAG="pr-${SHA}"
+#            fi
+#          elif [[ "$BRANCH" == "refs/heads/main" ]]; then
+#            TAG="prod-${SHA}"
+#          elif [[ "$BRANCH" == "refs/heads/dev" ]]; then
+#            TAG="dev-${SHA}"
+#          else
+#            TAG="unknown-${SHA}"
+#          fi
+#          echo "tag=$TAG" >> $GITHUB_OUTPUT
+#
+#      - name: SonarQube Analysis
+#        uses: SonarSource/sonarcloud-github-action@master
+#        with:
+#          projectBaseDir: .
+#        env:
+#          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+#
+#      - name: Build and Test
+#        run: |
+#          mvn clean install -DskipTests=false
+#
+#      - name: Login to Amazon ECR
+#        uses: aws-actions/amazon-ecr-login@v1
+#
+#      - name: Build and Push Docker image
+#        run: |
+#          docker build -t $ECR_REPO:${{ steps.tag.outputs.tag }} .
+#          docker push $ECR_REPO:${{ steps.tag.outputs.tag }}
+#
+#      - name: Trigger CD
+#        uses: peter-evans/repository-dispatch@v2
+#        with:
+#          repository: ton-org/ton-repo-deploiement
+#          event-type: deploy
+#          client-payload: >-
+#            {
+#              "branch": "${{ github.ref_name }}",
+#              "image_tag": "${{ steps.tag.outputs.tag }}"
+#            }
+#
+#
+#
+#------------------------------------------------------------------------------------
+#
+#
+#
+#
+#
+#name: CI - Build, Scan, Push and Trigger CD
+#
+#on:
+#  push:
+#    branches: [ main, 'release/**' ]
+#
+#jobs:
+#  build-scan-push:
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#      - name: Checkout source code
+#        uses: actions/checkout@v4
+#
+#      - name: Set up JDK 17
+#        uses: actions/setup-java@v4
+#        with:
+#          java-version: '17'
+#          distribution: 'temurin'
+#
+#      - name: SonarQube Analysis
+#        uses: SonarSource/sonarcloud-github-action@master
+#        with:
+#          projectBaseDir: .
+#        env:
+#          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+#
+#      - name: Build with Maven (skip tests)
+#        run: mvn clean install -DskipTests
+#
+#      - name: Run unit tests
+#        run: mvn test
+#
+#      - name: Login to Amazon ECR
+#        uses: aws-actions/amazon-ecr-login@v1
+#
+#      - name: Build Docker image with commit SHA tag
+#        env:
+#          IMAGE_TAG: ${{ github.sha }}
+#        run: |
+#          docker build -t my-backend-app:$IMAGE_TAG .
+#
+#      - name: Scan Docker image with Trivy (local image)
+#        uses: aquasecurity/trivy-action@master
+#        with:
+#          image-ref: my-backend-app:${{ github.sha }}
+#
+#      - name: Tag Docker image for ECR and Push
+#        env:
+#          IMAGE_TAG: ${{ github.sha }}
+#          ECR_REPO: ${{ secrets.ECR_REPO }}
+#        run: |
+#          docker tag my-backend-app:$IMAGE_TAG $ECR_REPO:$IMAGE_TAG
+#          docker push $ECR_REPO:$IMAGE_TAG
+#
+#      - name: Trigger CD workflow dans repo déploiement
+#        uses: peter-evans/repository-dispatch@v2
+#        with:
+#          repository: ton-org/ton-repo-deploiement  # <== MODIFIE ici
+#          event-type: deploy
+#          client-payload: '{"sha":"${{ github.sha }}"}'
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }} # Token avec repo et workflow permissions
+#
+#
+#

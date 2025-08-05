@@ -1,0 +1,105 @@
+name: CD vers EKS avec Helm
+
+on:
+  repository_dispatch:
+    types: [deploy]
+
+jobs:
+  deploy:
+    name: Déployer sur EKS avec Helm
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v3
+
+      - name: Configurer les identifiants AWS
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::<ACCOUNT_ID>:role/<NOM_ROLE_OIDC>
+          aws-region: ca-central-1
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+
+      - name: Mettre à jour le kubeconfig
+        run: aws eks update-kubeconfig --name nom-du-cluster --region ca-central-1
+
+      - name: Installer Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: v3.14.0
+
+      - name: Déployer avec Helm
+        run: |
+          helm upgrade --install mon-app ./chart/ \
+            --namespace mon-namespace \
+            --create-namespace \
+            --set image.repository=ID_ECR.dkr.ecr.ca-central-1.amazonaws.com/mon-app \
+            --set image.tag=${{ github.event.client_payload.sha }}
+          
+          
+
+---
+name: Déploiement Manuel Multi-Environnement
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environnement à déployer'
+        required: true
+        default: dev
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+      branch:
+        description: 'Branche Git à déployer (ex: main, develop)'
+        required: false
+        default: main
+        type: string
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    environment: ${{ github.event.inputs.environment }}
+
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.inputs.branch }}
+
+      - name: Configurer AWS CLI
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ca-central-1
+
+      - name: Se connecter à EKS
+        run: aws eks update-kubeconfig --region ca-central-1 --name mon-cluster
+
+      - name: Installer Helm
+        uses: azure/setup-helm@v3
+
+      - name: Déployer avec Helm
+        run: |
+          ENV="${{ github.event.inputs.environment }}"
+          BRANCH="${{ github.event.inputs.branch }}"
+          IMAGE_TAG="${BRANCH}-${{ github.sha }}"
+
+          echo "Déploiement sur l'environnement : $ENV"
+          echo "Branche : $BRANCH"
+          echo "Tag image final : $IMAGE_TAG"
+
+          helm upgrade --install mon-app ./chart \
+            --namespace mon-namespace-$ENV \
+            --create-namespace \
+            --values ./chart/values.yaml \
+            --values ./chart/values-$ENV.yaml \
+            --set image.tag=$IMAGE_TAG
+
