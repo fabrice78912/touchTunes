@@ -1,0 +1,31 @@
+name: Deploy Maven package
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Récupérer le code source
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      # 2. Installer JDK
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      # 3. Déploiement vers GitHub Packages
+      - name: Deploy package to GitHub Packages
+        run: mvn deploy --settings .github/maven-settings.xml -DskipTests
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN_GITHUB }}
+          GITHUB_ACTOR: ${{ secretes.USERNAME_GITHUB }}

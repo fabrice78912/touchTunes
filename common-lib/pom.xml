@@ -28,7 +28,7 @@
 		<repository>
 			<id>github</id>
 			<name>GitHub OWNER Apache Maven Packages</name>
-			<url>https://maven.pkg.github.com/TON_ORG/common-lib</url>
+			<url>https://maven.pkg.github.com/fabrice78912/touchTunes</url>
 		</repository>
 	</distributionManagement>
 
