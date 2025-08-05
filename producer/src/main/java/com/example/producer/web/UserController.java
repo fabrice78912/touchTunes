@@ -1,6 +1,8 @@
 package com.example.producer.web;
 
+import com.example.producer.mapper.UserMapper;
 import com.example.producer.model.User;
+import com.example.producer.model.dto.UserRequest;
 import com.example.producer.service.nosql.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +14,8 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class UserController {
 
-  @Autowired private final UserService userService;
+  private final UserService userService;
+  private final UserMapper userMapper;
 
   @PostMapping
   public ResponseEntity<User> createUser(@RequestBody User user) {

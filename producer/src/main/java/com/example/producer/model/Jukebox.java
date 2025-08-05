@@ -3,6 +3,7 @@ package com.example.producer.model;
 import java.time.Instant;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -11,6 +12,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Getter
 public class Jukebox {
   @Id private String id;
   private String serialNumber;
@@ -19,4 +21,5 @@ public class Jukebox {
   private String locationId; // Référence vers Location (par son ID)
   private Instant lastHeartbeat;
   private Instant createdAt = Instant.now();
+  private String model;
 }

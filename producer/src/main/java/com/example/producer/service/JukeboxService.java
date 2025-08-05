@@ -6,12 +6,14 @@ import com.example.producer.repo.JukeboxRepository;
 import java.security.SecureRandom;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class JukeboxService {
 
   private final JukeboxRepository repository;
@@ -56,6 +58,7 @@ public class JukeboxService {
 
   private Mono<String> generateUniqueJukeboxId() {
     String candidateId = ID_PREFIX + generateRandomAlphanumeric(RANDOM_ID_LENGTH);
+    log.info("id test {}", candidateId);
     return repository
         .findByJukeboxId(candidateId)
         .flatMap(existing -> generateUniqueJukeboxId()) // Collision, on recommence

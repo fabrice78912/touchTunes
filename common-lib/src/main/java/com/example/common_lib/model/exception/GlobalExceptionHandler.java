@@ -53,19 +53,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
     }
 
-    // Gère les autres exceptions globalement
-/*    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Object>> handleOtherExceptions(Exception ex) {
-        ApiResponse<Object> response = ApiResponse.builder()
-                .timestamp(Instant.now())
-                .status(HttpStatus.BAD_REQUEST.value())
-                .message("Bad request : " + ex.getMessage())
-                .code("BAD_REQUEST")
-                .build();
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-    }*/
-
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<ApiResponse<Object>> handleNotFoundException(NotFoundException ex) {
         log.error("NotFoundException capturée: {}", ex.getMessage()); // <== ajoute ce log
@@ -127,6 +114,18 @@ public class GlobalExceptionHandler {
                 HttpStatus.INTERNAL_SERVER_ERROR.value()
         );
         return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response));
+    }
+
+    @ExceptionHandler(DuplicateEmailException.class)
+    public ResponseEntity<ApiResponse<Object>> handleDuplicateEmail(DuplicateEmailException ex) {
+        ApiResponse<Object> response = ApiResponse.builder()
+                .timestamp(Instant.now())
+                .status(HttpStatus.CONFLICT.value())
+                .message(ex.getMessage())
+                .code(ex.getCode())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
 }

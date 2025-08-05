@@ -31,29 +31,30 @@ public class PlayRequestService {
   private final JukeboxMongoRepo jukeboxRepository;
   private final PlayRequestRepository playRequestRepository;
   private final JukeboxProducerService producerService;
+  private static final String URL_API = "/api/jukebox/events";
 
   public ApiResponse<JukeboxEvent> createPlayRequest(
-      java.lang.String userId,
-      java.lang.String trackId,
-      java.lang.String jukeboxId,
+      String userId,
+      String trackId,
+      String jukeboxId,
       EventType string,
       PriorityLevel priority) {
 
     // Vérifier l'existence des entités référencées
     checkExistsOrThrow(
-        userRepository.existsById(userId), "User", userId, "USER_NOT_FOUND", "/api/jukebox/events");
+        userRepository.existsById(userId), "User", userId, "USER_NOT_FOUND", URL_API);
     checkExistsOrThrow(
         trackRepository.existsById(trackId),
         "Track",
         trackId,
         "TRACK_NOT_FOUND",
-        "/api/jukebox/events");
+        URL_API);
     checkExistsOrThrow(
         jukeboxRepository.existsById(jukeboxId),
         "Jukebox",
         jukeboxId,
         "JUKEBOX_NOT_FOUND",
-        "/api/jukebox/events");
+            URL_API);
 
     // Créer et sauvegarder le PlayRequest
     PlayRequest request = new PlayRequest();
@@ -71,7 +72,7 @@ public class PlayRequestService {
     JukeboxEvent event = toJukeboxEvent(savedRequest);
 
     // Envoi de l'événement via le producer
-    ApiResponse<?> producerResponse = producerService.sendEventMongo(event, "/api/jukebox/events");
+    ApiResponse<?> producerResponse = producerService.sendEventMongo(event, URL_API);
     log.info("🎵 Envoye : {}", event);
 
     if (producerResponse.getStatus() != HttpStatus.OK.value()) {
@@ -79,7 +80,7 @@ public class PlayRequestService {
     }
 
     // Retourner la réponse au client dans le format désiré
-    ApiResponse<JukeboxEvent> JukeboxEvent =
+    ApiResponse<JukeboxEvent> jukeboxEvent =
         ApiResponse.<JukeboxEvent>builder()
             .timestamp(event.getTimestamp())
             .status(HttpStatus.OK.value())
@@ -89,8 +90,8 @@ public class PlayRequestService {
             .data(event)
             .path("/api/play-requests")
             .build();
-    log.info("🎵 Envoye : {}", JukeboxEvent);
-    return JukeboxEvent;
+    log.info("🎵 Envoye : {}", jukeboxEvent);
+    return jukeboxEvent;
   }
 
   public JukeboxEvent toJukeboxEvent(PlayRequest playRequest) {
@@ -112,10 +113,10 @@ public class PlayRequestService {
 
   private void checkExistsOrThrow(
       boolean exists,
-      java.lang.String entityName,
-      java.lang.String entityId,
-      java.lang.String code,
-      java.lang.String path) {
+      String entityName,
+      String entityId,
+      String code,
+      String path) {
     if (!exists) {
       throw new NotFoundException(entityName + " ID introuvable en base. " + entityId, code, path);
     }

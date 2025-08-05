@@ -6,6 +6,7 @@ import com.example.producer.model.dto.ActivationResponse;
 import com.example.producer.model.dto.HardwareInfo;
 import com.example.producer.service.JukeboxProducerService;
 import com.example.producer.service.JukeboxService;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -48,6 +49,7 @@ public class JukeboxEventController {
   }
 
   @PostMapping
+  @Operation(summary = "Publie un event sur la queue")
   public Mono<ApiResponse<Map<String, String>>> publish(@RequestBody JukeboxEvent event) {
     return producerService.sendEvent(event, "/api/jukebox/events");
   }

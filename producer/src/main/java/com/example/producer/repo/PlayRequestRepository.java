@@ -11,7 +11,7 @@ public interface PlayRequestRepository extends MongoRepository<PlayRequest, Stri
 
   Optional<PlayRequest> findById(String jukeboxId);
 
-  Optional<PlayRequest> findByUserId(String UserId);
+  Optional<PlayRequest> findByUserId(String userId);
 
   List<PlayRequest> findByTrackIdAndStatusIn(String trackId, List<String> statuses);
 }

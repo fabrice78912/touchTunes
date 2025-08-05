@@ -1,14 +1,0 @@
-
-F
-java:S1068
-"*Remove this unused "userId" private field.(íÃË8ëÿºŠ‡3
-M
-java:S1068"+Remove this unused "trackId" private field.(ß²ş×ûÿÿÿÿ8ëÿºŠ‡3
-J
-java:S1068"-Remove this unused "jukeboxId" private field.(¼Ô®Ü8ëÿºŠ‡3
-H
-java:S1068",Remove this unused "position" private field.(•È?8ëÿºŠ‡3
-H
-java:S1068",Remove this unused "priority" private field.(“ß³[8ëÿºŠ‡3
-M
-java:S1068"+Remove this unused "addedAt" private field.(¼ô¬ïÿÿÿÿÿ8ëÿºŠ‡3
