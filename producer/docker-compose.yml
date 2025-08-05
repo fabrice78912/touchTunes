@@ -106,6 +106,62 @@ services:
     volumes:
       - sonarqube_db_data:/var/lib/postgresql/data
     restart: unless-stopped
+  postgres-service:
+    image: postgres:16-alpine
+    container_name: postgres-service
+    volumes:
+      - postgres_data_enset:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: keycloak_enset_db
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: k1234
+    ports:
+      - '5433:5432'
+    expose:
+      - '5433'
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "keycloak", "-d", "keycloak_enset_db", "-h", "localhost" ]
+      timeout: 5s
+      retries: 10
+  pgadmin4:
+    image: dpage/pgadmin4
+    container_name: pgadmin4
+    restart: always
+    ports:
+      - "8888:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: med@gmail.com
+      PGADMIN_DEFAULT_PASSWORD: azer
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: keycloak
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres-service:5432/keycloak_enset_db
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: k1234
+      KEYCLOAK_ADMIN: admin
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    command:
+      - start-dev
+    restart: always
+    ports:
+      - '8080:8080'
+    expose:
+      - '8080'
+    depends_on:
+      - postgres-service
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/realms/master" ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
 
 volumes:
   mongo-data:
@@ -113,3 +169,5 @@ volumes:
   sonarqube_logs:
   sonarqube_extensions:
   sonarqube_db_data:
+  postgres_data_enset:
+  pgadmin_data:
