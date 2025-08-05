@@ -12,7 +12,9 @@ import com.example.producer.repo.TrackRepository;
 import com.example.producer.repo.UserRepository;
 import com.example.producer.service.JukeboxProducerService;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -122,7 +124,16 @@ public class PlayRequestService {
     }
   }
 
-  public Page<PlayRequest> getAllPlayRequests(Pageable pageable) {
-    return playRequestRepository.findAll(pageable);
+  public Page<PlayRequest> getAllPlayRequests(Pageable pageable, String filter) {
+    // Aucun filtre => comportement actuel
+    if (filter == null || filter.isEmpty()) {
+      return playRequestRepository.findAll(pageable);
+    }
+
+    // Exemple filter = "priority:BOOSTED,status:PENDING"
+    List<String> filters = Arrays.stream(filter.split(","))
+            .map(String::trim)
+            .toList();
+    return playRequestRepository.findAllWithFilters(pageable, filters);
   }
 }

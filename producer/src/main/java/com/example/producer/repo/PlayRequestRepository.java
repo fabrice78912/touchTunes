@@ -7,7 +7,8 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface PlayRequestRepository extends MongoRepository<PlayRequest, String> {
+public interface PlayRequestRepository extends MongoRepository<PlayRequest, String>,
+        PlayRequestRepositoryCustom {
 
   Optional<PlayRequest> findById(String jukeboxId);
 
@@ -15,3 +16,4 @@ public interface PlayRequestRepository extends MongoRepository<PlayRequest, Stri
 
   List<PlayRequest> findByTrackIdAndStatusIn(String trackId, List<String> statuses);
 }
+
