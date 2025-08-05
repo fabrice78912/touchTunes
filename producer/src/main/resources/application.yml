@@ -60,3 +60,10 @@ eventapi:
   kafka:
     topic: jukebox-events     # Remplace par le nom réel de ton topic Kafka
     groupId: events-group    # Remplace par le groupId de ton consumer
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+

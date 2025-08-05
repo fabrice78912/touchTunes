@@ -5,6 +5,7 @@ import com.example.common_lib.model.response.ApiResponse;
 import com.example.producer.model.PlayRequest;
 import com.example.producer.model.dto.PlayRequestDto;
 import com.example.producer.service.nosql.PlayRequestService;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -35,10 +36,11 @@ public class PlayRequestController {
   }
 
   @GetMapping
+  @Operation(summary = "Récupère toutes les play requests avec pagination")
   public Page<PlayRequest> getAllPlayRequests(
+          @RequestParam(name = "sortBy", defaultValue = "requestedAt") String sortBy,
           @RequestParam(defaultValue = "0") int page,
           @RequestParam(defaultValue = "10") int size,
-          @RequestParam(defaultValue = "requestedAt") String sortBy,
           @RequestParam(defaultValue = "asc") String sortDirection) {
 
     Sort.Direction direction = sortDirection.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;

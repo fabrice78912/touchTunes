@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/jukebox")
 @RequiredArgsConstructor
@@ -46,7 +48,7 @@ public class JukeboxEventController {
   }
 
   @PostMapping
-  public Mono<Object> publish(@RequestBody JukeboxEvent event) {
+  public Mono<ApiResponse<Map<String, String>>> publish(@RequestBody JukeboxEvent event) {
     return producerService.sendEvent(event, "/api/jukebox/events");
   }
 }

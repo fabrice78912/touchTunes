@@ -81,10 +81,10 @@
 		</dependency>
 
 		<!-- Spring Reactive Web -->
-		<!--<dependency>
+		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webflux</artifactId>
-		</dependency>-->
+		</dependency>
 
 		<!-- R2DBC Core -->
 		<dependency>
@@ -119,17 +119,17 @@
 
 
 		<!-- WebFlux (pour un client REST réactif ou contrôleurs WebFlux) -->
-		<dependency>
+<!--		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webflux</artifactId>
-		</dependency>
+		</dependency>-->
 
 		<!-- Swagger ou OpenAPI annotations (nullable support) -->
-		<dependency>
+<!--		<dependency>
 			<groupId>io.swagger.core.v3</groupId>
 			<artifactId>swagger-annotations</artifactId>
 			<version>2.2.15</version>
-		</dependency>
+		</dependency>-->
 
 		<!-- Flyway -->
 		<dependency>
@@ -158,6 +158,20 @@
 			<artifactId>modelmapper</artifactId>
 			<version>3.1.1</version>
 		</dependency>
+
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
+			<version>2.2.0</version> <!-- vérifie la dernière version sur Maven Central -->
+		</dependency>
+
+
+<!--		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+			<version>2.2.0</version> &lt;!&ndash; ou dernière version stable &ndash;&gt;
+		</dependency>-->
+
 
 
 
