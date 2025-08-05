@@ -1,0 +1,65 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: producer
+
+  r2dbc:
+    url: r2dbc:mysql://localhost:3306/touchtunes_db?serverTimezone=-04:00
+    username: root
+    password: root
+
+    sql:
+      init:
+        mode: always
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/touchtunes_db?serverTimezone=-04:00
+    username: root
+    password: root
+
+    flyway:
+      enabled: true
+      locations: classpath:db/migration
+      baseline-on-migrate: true
+
+  data:
+#    mongodb:
+#      uri: mongodb://admin:admin@localhost:27017/admin?authSource=admin
+#    mongosh "mongodb://admin:admin@localhost:27017/touchtunes_mongo?authSource=admin"
+
+    mongodb:
+      host: localhost
+      port: 27017
+      database: touchtunes_mongo
+      username: admin # Facultatif si auth activée
+      password: admin # Facultatif si auth activée
+      authentication-database: admin # Facultatif selon config Mongo
+      auto-index-creation: true
+
+  # Logging SQL (optionnel)
+  r2dbc.properties:
+    loggerLevel: DEBUG
+
+# Activer les logs SQL (optionnel pour debug)
+logging:
+  level:
+    org.springframework.r2dbc.core: DEBUG
+    io.r2dbc.spi: DEBUG
+
+
+  kafka:
+    bootstrap-servers: localhost:9092
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+    admin:
+      properties:
+        bootstrap.servers: localhost:9092
+
+partition:
+  number: 5
+
