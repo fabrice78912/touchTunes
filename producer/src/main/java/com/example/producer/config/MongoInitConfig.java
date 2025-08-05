@@ -1,11 +1,13 @@
 package com.example.producer.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.core.MongoTemplate;
 
 @Configuration
+@Slf4j
 public class MongoInitConfig {
 
   @Bean
@@ -18,7 +20,7 @@ public class MongoInitConfig {
       for (String name : collections) {
         if (!mongoTemplate.collectionExists(name)) {
           mongoTemplate.createCollection(name);
-          System.out.println("✅ Collection créée : " + name);
+          log.info("✅ Collection créée : {}", name);
         }
       }
     };

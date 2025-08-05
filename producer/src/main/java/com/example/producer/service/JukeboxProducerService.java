@@ -15,6 +15,8 @@ import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+
+
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -103,7 +105,8 @@ public class JukeboxProducerService {
             event.getEventId(), jukeboxId, partition);
 
     try {
-      CompletableFuture<SendResult<String, JukeboxEvent>> future = kafkaTemplate.send(TOPIC_NAME, partition, jukeboxId, event);
+      CompletableFuture<SendResult<String, JukeboxEvent>> future =
+          kafkaTemplate.send(TOPIC_NAME, partition, event.getEventId(), event);
       SendResult<String, JukeboxEvent> result = future.get(TIMEOUT_MS, TimeUnit.MILLISECONDS);
 
       String formattedTime = DateTimeFormatter.ISO_LOCAL_DATE_TIME

@@ -6,7 +6,9 @@ import com.example.producer.model.Jukeboxe;
 import com.example.producer.repo.JukeboxRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -16,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class JukeboxServiceTest {
 
     @Mock
@@ -23,11 +26,6 @@ class JukeboxServiceTest {
 
     @InjectMocks
     private JukeboxService jukeboxService;
-
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-    }
 
     @Test
     void activateJukebox_alreadyExists() {

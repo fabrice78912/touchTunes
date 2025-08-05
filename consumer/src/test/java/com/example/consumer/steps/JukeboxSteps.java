@@ -76,7 +76,6 @@ public class JukeboxSteps {
             when(mockResponseSpec.bodyToMono(ActivationResponse.class))
                     .thenReturn(Mono.error(WebClientResponseException.create(404, "Not Found", null, null, null)));
         }
-
     }
 }
 

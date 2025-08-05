@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/play-requests")
@@ -36,18 +37,20 @@ public class PlayRequestController {
   }
 
   @GetMapping
-  @Operation(summary = "Récupère toutes les play requests avec pagination")
+  @Operation(summary = "Récupère toutes les play requests avec pagination et filtres")
   public Page<PlayRequest> getAllPlayRequests(
           @RequestParam(name = "sortBy", defaultValue = "requestedAt") String sortBy,
           @RequestParam(defaultValue = "0") int page,
           @RequestParam(defaultValue = "10") int size,
-          @RequestParam(defaultValue = "asc") String sortDirection) {
+          @RequestParam(defaultValue = "asc") String sortDirection,
+          @RequestParam(name = "filter", required = false) String filter) {
 
-    Sort.Direction direction = sortDirection.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
+    Sort.Direction direction = sortDirection.equalsIgnoreCase("desc")
+            ? Sort.Direction.DESC
+            : Sort.Direction.ASC;
+
     Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
 
-    return playRequestService.getAllPlayRequests(pageable);
+    return playRequestService.getAllPlayRequests(pageable, filter);
   }
-
-
 }
